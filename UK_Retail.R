@@ -136,18 +136,35 @@ eurogdppercapita_D2_L3_train <- window(eurogdppercapita_D2_L3, start=as.yearqtr(
 eurogdppercapita_LogD1_L3_train <- window(eurogdppercapita_LogD1_L3, start=as.yearqtr("2005 Q1"), end=as.yearqtr("2013 Q4"))
 UKhouseindex_D2_L4_train <- window(UKhouseindex_D2_L4, start=as.yearqtr("2005 Q1"), end=as.yearqtr("2013 Q4"))
 loss_ts_boxcoxD1_train <- window(loss_ts_boxcoxD1, start=as.yearqtr("2005 Q1"), end=as.yearqtr("2013 Q4"))
+loss_ts_train <- window(loss_ts, start=as.yearqtr("2005 Q1"), end=as.yearqtr("2013 Q4"))
 
 eurogdppercapita_D1_L3_test <- window(eurogdppercapita_D1_L3, start=as.yearqtr("2014 Q1"), end=as.yearqtr("2015 Q4"))
 eurogdppercapita_D2_L3_test <- window(eurogdppercapita_D2_L3, start=as.yearqtr("2014 Q1"), end=as.yearqtr("2015 Q4"))
 eurogdppercapita_LogD1_L3_test <- window(eurogdppercapita_LogD1_L3, start=as.yearqtr("2014 Q1"), end=as.yearqtr("2015 Q4"))
 UKhouseindex_D2_L4_test <- window(UKhouseindex_D2_L4, start=as.yearqtr("2014 Q1"), end=as.yearqtr("2015 Q4"))
 loss_ts_boxcoxD1_test <- window(loss_ts_boxcoxD1, start=as.yearqtr("2014 Q1"), end=as.yearqtr("2015 Q4"))
+loss_ts_test <- window(loss_ts, start=as.yearqtr("2014 Q1"), end=as.yearqtr("2015 Q4"))
+
+#Multi Variate OLS
+df_ols = cbind(eurogdppercapita_D1_L3_train,eurogdppercapita_D2_L3_train,eurogdppercapita_LogD1_L3_train,UKhouseindex_D2_L4_train,loss_ts_boxcoxD1_train)
+ols <- lm(loss_ts_boxcoxD1_train~ eurogdppercapita_D1_L3_train + eurogdppercapita_D2_L3_train + eurogdppercapita_LogD1_L3_train + UKhouseindex_D2_L4_train, data = df_ols)
+summary(ols)
 
 ex_macro_train = cbind(eurogdppercapita_LogD1_L3_train,UKhouseindex_D2_L4_train)
 ex_macro_test = cbind(eurogdppercapita_LogD1_L3_test,UKhouseindex_D2_L4_test)
 
-arimax_model <- auto.arima(loss_ts_boxcoxD1_train,,xreg=ex_macro_train)
-arimax_model
+##Auto Arima
+#arimax_model <- auto.arima(loss_ts_boxcoxD1_train,xreg=ex_macro_train) #loss_ts_boxcoxD1_train
+#arimax_model
+
+## Arima Model
+acf(loss_ts_boxcoxD1_train)
+pacf(loss_ts_boxcoxD1_train)
+
+arimax_model <- Arima(loss_ts_boxcoxD1_train,order=c(2,0,1),xreg=ex_macro_train)
+summary(arimax_model)
+
+checkresiduals(arimax_model)
 
 arimax_forecast <- predict(arimax_model, newxreg=ex_macro_test,n.ahead=8)
 
@@ -157,5 +174,5 @@ accuracy
 autoplot(arimax_forecast$pred)
 autoplot(loss_ts_boxcoxD1_test)
 
-summary(arimax_model)
+
 ####
